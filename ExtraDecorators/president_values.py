@@ -16,7 +16,7 @@ class _president_values_cls:
 
     def __call__(self, *args, **kwargs):
         """the "inner" part of the decorator"""
-        return function(self, *args, **kwargs)
+        return self._function(self, *args, **kwargs)
 
     def __getattr__(self, attr: str) -> any:
         """return an item from self._values"""
@@ -28,7 +28,10 @@ class _president_values_cls:
 
     def __setattr__(self, attr: str, value: any) -> None:
         """sets a value of self._values"""
-        self._values[attr] = value
+        if attr in ["_function", "_values", "_starter_values"]:
+            return object.__setattr__(self, attr, value)
+        else:
+            self._values[attr] = value
 
     def __getitem__(self, key: str) -> None:
         """Gate way to self._values.__getitem__"""
@@ -36,20 +39,20 @@ class _president_values_cls:
 
     def __setitem__(self, key: str, value: any) -> None:
         """Gate way to self._values.__setitem__"""
-        return self._values[key] = value
+        self._values[key] = value
 
-    @classmethod
-    def new_copy(cls, *, keep_values=True):
+    def new_copy(self, *, keep_values=True):
         """
         return copy of this class, with the current values or
         with the values passed at the start.
         """
+        cls = self.__class__
         if keep_values:
             values = copy.deepcopy(self._values)
         else:
             values = copy.deepcopy(self._starter_values)
 
-        return cls(self._function, values)
+        return cls(self._function, **values)
 
 def president_values(**values):
     """
@@ -68,4 +71,6 @@ def president_values(**values):
     ```
     it also supplies other funconnality, see _president_values_cls.
     """
-
+    def decorator(function):
+        return _president_values_cls(function, **values)
+    return decorator
